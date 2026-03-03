@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+TEAMWORK_SOURCE="${TEAMWORK_SOURCE:-JoshLuedeman/teamwork}"
+TEAMWORK_REF="${TEAMWORK_REF:-main}"
+
+usage() {
+  cat <<EOF
+gh teamwork - Bootstrap the Teamwork AI development framework
+
+USAGE
+  gh teamwork <subcommand> [flags]
+
+SUBCOMMANDS
+  init        Install Teamwork into the current directory
+  update      Update Teamwork framework files
+
+FLAGS
+  --source    Source repo (default: JoshLuedeman/teamwork)
+  --ref       Git ref to install from (default: main)
+  --force     Overwrite user-modified framework files
+
+EXAMPLES
+  gh teamwork init
+  gh teamwork init --source myorg/teamwork-fork --ref v1.2.0
+  gh teamwork update
+EOF
+}
+
+run_teamwork() {
+  local cmd="$1"; shift
+  if command -v teamwork &>/dev/null; then
+    teamwork "$cmd" "$@"
+  else
+    echo "teamwork binary not found. Running via Docker..."
+    docker run --rm -v "$(pwd):/workspace" -w /workspace \
+      ghcr.io/joshluedeman/teamwork:latest teamwork "$cmd" "$@"
+  fi
+}
+
+parse_flags() {
+  FLAGS=()
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --source) FLAGS+=(--source "$2"); shift 2 ;;
+      --ref)    FLAGS+=(--ref "$2"); shift 2 ;;
+      --force)  FLAGS+=(--force); shift ;;
+      *) echo "Unknown flag: $1"; usage; exit 1 ;;
+    esac
+  done
+}
+
+SUBCOMMAND="${1:-help}"
+shift || true
+
+case "$SUBCOMMAND" in
+  init)
+    parse_flags "$@"
+    echo "Bootstrapping Teamwork framework..."
+    run_teamwork install "${FLAGS[@]}"
+    echo ""
+    echo "✓ Teamwork installed. Next steps:"
+    echo "  1. Edit MEMORY.md with your project context"
+    echo "  2. Edit .teamwork/config.yaml to set your models"
+    echo "  3. Read agents/roles/ to understand the roles"
+    ;;
+  update)
+    parse_flags "$@"
+    echo "Updating Teamwork framework..."
+    run_teamwork update "${FLAGS[@]}"
+    ;;
+  help|--help|-h|"")
+    usage
+    ;;
+  *)
+    echo "Unknown subcommand: $SUBCOMMAND"
+    usage
+    exit 1
+    ;;
+esac
