@@ -3,6 +3,8 @@ set -euo pipefail
 
 TEAMWORK_SOURCE="${TEAMWORK_SOURCE:-JoshLuedeman/teamwork}"
 TEAMWORK_REF="${TEAMWORK_REF:-main}"
+TEAMWORK_BIN_DIR="${HOME}/.local/bin"
+TEAMWORK_BIN="${TEAMWORK_BIN_DIR}/teamwork"
 
 usage() {
   cat <<EOF
@@ -27,15 +29,82 @@ EXAMPLES
 EOF
 }
 
+detect_platform() {
+  local os arch
+  os="$(uname -s | tr '[:upper:]' '[:lower:]')"
+  arch="$(uname -m)"
+  case "$arch" in
+    x86_64)  arch="amd64" ;;
+    aarch64|arm64) arch="arm64" ;;
+    *) echo "Unsupported architecture: $arch" >&2; return 1 ;;
+  esac
+  echo "${os}_${arch}"
+}
+
+install_binary() {
+  local platform release_url asset_url
+  platform="$(detect_platform)" || return 1
+
+  echo "Downloading teamwork binary for ${platform}..."
+  mkdir -p "$TEAMWORK_BIN_DIR"
+
+  # Try to download from GitHub releases
+  release_url="https://api.github.com/repos/${TEAMWORK_SOURCE}/releases/latest"
+  asset_url=$(curl -sL "$release_url" \
+    | grep "browser_download_url.*${platform}" \
+    | head -1 \
+    | cut -d '"' -f 4) || true
+
+  if [[ -n "$asset_url" ]]; then
+    if [[ "$asset_url" == *.tar.gz ]]; then
+      curl -sL "$asset_url" | tar xz -C "$TEAMWORK_BIN_DIR" teamwork
+    else
+      curl -sL -o "$TEAMWORK_BIN" "$asset_url"
+    fi
+    chmod +x "$TEAMWORK_BIN"
+    echo "✓ Installed teamwork to ${TEAMWORK_BIN}"
+    return 0
+  fi
+
+  echo "No pre-built binary found for ${platform}." >&2
+  return 1
+}
+
 run_teamwork() {
   local cmd="$1"; shift
+
+  # 1. Check if teamwork is on PATH
   if command -v teamwork &>/dev/null; then
     teamwork "$cmd" "$@"
-  else
-    echo "teamwork binary not found. Running via Docker..."
+    return
+  fi
+
+  # 2. Check if we previously downloaded it
+  if [[ -x "$TEAMWORK_BIN" ]]; then
+    "$TEAMWORK_BIN" "$cmd" "$@"
+    return
+  fi
+
+  # 3. Try to download the binary
+  if install_binary; then
+    "$TEAMWORK_BIN" "$cmd" "$@"
+    return
+  fi
+
+  # 4. Fall back to Docker
+  if command -v docker &>/dev/null; then
+    echo "Falling back to Docker..."
     docker run --rm -v "$(pwd):/workspace" -w /workspace \
       ghcr.io/joshluedeman/teamwork:latest teamwork "$cmd" "$@"
+    return
   fi
+
+  echo "Error: Could not find or install the teamwork binary, and Docker is not available." >&2
+  echo "Install options:" >&2
+  echo "  1. Download from: https://github.com/${TEAMWORK_SOURCE}/releases" >&2
+  echo "  2. Build from source: go install github.com/${TEAMWORK_SOURCE}/cmd/teamwork@latest" >&2
+  echo "  3. Install Docker: https://docs.docker.com/get-docker/" >&2
+  exit 1
 }
 
 parse_flags() {
@@ -62,7 +131,7 @@ case "$SUBCOMMAND" in
     echo "✓ Teamwork installed. Next steps:"
     echo "  1. Edit MEMORY.md with your project context"
     echo "  2. Edit .teamwork/config.yaml to set your models"
-    echo "  3. Read agents/roles/ to understand the roles"
+    echo "  3. Run /setup-teamwork in Copilot to configure agents for your project"
     ;;
   update)
     parse_flags "$@"

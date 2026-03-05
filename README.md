@@ -33,15 +33,19 @@ gh teamwork init
 This installs the Teamwork framework files into the current directory, giving you:
 
 - `MEMORY.md` — Project context for AI agents
-- `agents/roles/` — Role definitions (planner, architect, coder, etc.)
-- `agents/workflows/` — Step-by-step workflow guides
+- `.github/agents/` — Custom Agents (selectable from Copilot's dropdown)
+- `.github/skills/` — Skills (invocable via `/skill-name` in Copilot)
+- `.github/instructions/` — Path-specific auto-loaded guidelines
 - `docs/` — Conventions, architecture decisions, and glossary
 
 ## Requirements
 
-Either the `teamwork` binary must be installed, or Docker must be available as a fallback.
+The extension automatically handles finding or installing the `teamwork` binary:
 
-To install the `teamwork` binary directly, see the [Teamwork releases](https://github.com/JoshLuedeman/teamwork/releases).
+1. **Installed binary** — uses `teamwork` if it's already on your PATH
+2. **Auto-download** — downloads the latest release binary to `~/.local/bin/` if not found
+3. **Docker fallback** — uses Docker as a last resort if download fails
+4. **Clear error** — if none of the above work, shows install options
 
 ## Advanced Usage
 
