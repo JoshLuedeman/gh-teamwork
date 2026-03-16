@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-TEAMWORK_SOURCE="${TEAMWORK_SOURCE:-JoshLuedeman/teamwork}"
+TEAMWORK_SOURCE="${TEAMWORK_SOURCE:-joshluedeman/teamwork}"
 TEAMWORK_REF="${TEAMWORK_REF:-main}"
 TEAMWORK_BIN_DIR="${HOME}/.local/bin"
 TEAMWORK_BIN="${TEAMWORK_BIN_DIR}/teamwork"
@@ -18,7 +18,7 @@ SUBCOMMANDS
   update      Update Teamwork framework files
 
 FLAGS
-  --source    Source repo (default: JoshLuedeman/teamwork)
+  --source    Source repo (default: joshluedeman/teamwork)
   --ref       Git ref to install from (default: main)
   --force     Overwrite user-modified framework files
 
