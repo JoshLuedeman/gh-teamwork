@@ -14,17 +14,20 @@ USAGE
   gh teamwork <subcommand> [flags]
 
 SUBCOMMANDS
-  init        Install Teamwork into the current directory
+  init        Initialize Teamwork: fetch framework files and create config
   update      Update Teamwork framework files
 
 FLAGS
-  --source    Source repo (default: joshluedeman/teamwork)
-  --ref       Git ref to install from (default: main)
-  --force     Overwrite user-modified framework files
+  --source          Source repo (default: joshluedeman/teamwork)
+  --ref             Git ref to install from (default: main)
+  --force           Re-fetch framework files / overwrite user-modified files
+  --preset          Use a preset config for a specific stack (e.g., go-api, ts-react)
+  --non-interactive Skip the interactive setup wizard
 
 EXAMPLES
   gh teamwork init
   gh teamwork init --source myorg/teamwork-fork --ref v1.2.0
+  gh teamwork init --preset go-api
   gh teamwork update
 EOF
 }
@@ -111,9 +114,11 @@ parse_flags() {
   FLAGS=()
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --source) FLAGS+=(--source "$2"); shift 2 ;;
-      --ref)    FLAGS+=(--ref "$2"); shift 2 ;;
-      --force)  FLAGS+=(--force); shift ;;
+      --source)          FLAGS+=(--source "$2"); shift 2 ;;
+      --ref)             FLAGS+=(--ref "$2"); shift 2 ;;
+      --force)           FLAGS+=(--force); shift ;;
+      --preset)          FLAGS+=(--preset "$2"); shift 2 ;;
+      --non-interactive) FLAGS+=(--non-interactive); shift ;;
       *) echo "Unknown flag: $1"; usage; exit 1 ;;
     esac
   done
@@ -126,7 +131,7 @@ case "$SUBCOMMAND" in
   init)
     parse_flags "$@"
     echo "Bootstrapping Teamwork framework..."
-    run_teamwork install "${FLAGS[@]}"
+    run_teamwork init "${FLAGS[@]}"
     echo ""
     echo "✓ Teamwork installed. Next steps:"
     echo "  1. Edit MEMORY.md with your project context"

@@ -14,13 +14,15 @@ gh extension install JoshLuedeman/gh-teamwork
 gh teamwork <subcommand> [flags]
 
 SUBCOMMANDS
-  init        Install Teamwork into the current directory
+  init        Initialize Teamwork: fetch framework files and create config
   update      Update Teamwork framework files
 
 FLAGS
-  --source    Source repo (default: JoshLuedeman/teamwork)
-  --ref       Git ref to install from (default: main)
-  --force     Overwrite user-modified framework files
+  --source          Source repo (default: joshluedeman/teamwork)
+  --ref             Git ref to install from (default: main)
+  --force           Re-fetch framework files / overwrite user-modified files
+  --preset          Use a preset config for a specific stack (e.g., go-api, ts-react)
+  --non-interactive Skip the interactive setup wizard
 ```
 
 ## Quick Start
@@ -30,9 +32,10 @@ FLAGS
 gh teamwork init
 ```
 
-This installs the Teamwork framework files into the current directory, giving you:
+This sets up a complete Teamwork project in one step:
 
 - `MEMORY.md` — Project context for AI agents
+- `.teamwork/config.yaml` — Project configuration (models, roles, quality gates)
 - `.github/agents/` — Custom Agents (selectable from Copilot's dropdown)
 - `.github/skills/` — Skills (invocable via `/skill-name` in Copilot)
 - `.github/instructions/` — Path-specific auto-loaded guidelines
@@ -48,6 +51,12 @@ The extension automatically handles finding or installing the `teamwork` binary:
 4. **Clear error** — if none of the above work, shows install options
 
 ## Advanced Usage
+
+Initialize with a preset for your stack:
+
+```bash
+gh teamwork init --preset go-api
+```
 
 Install from a fork or specific version:
 
