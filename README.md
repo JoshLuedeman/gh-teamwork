@@ -16,13 +16,26 @@ gh teamwork <subcommand> [flags]
 SUBCOMMANDS
   init        Initialize Teamwork: fetch framework files and create config
   update      Update Teamwork framework files
+  doctor      Check project setup and environment health
+  validate    Validate config, state, handoffs, and memory
 
-FLAGS
+FLAGS (init)
   --source          Source repo (default: joshluedeman/teamwork)
   --ref             Git ref to install from (default: main)
   --force           Re-fetch framework files / overwrite user-modified files
   --preset          Use a preset config for a specific stack (e.g., go-api, ts-react)
   --non-interactive Skip the interactive setup wizard
+
+FLAGS (update)
+  --source          Source repo (default: joshluedeman/teamwork)
+  --ref             Git ref to update from (default: main)
+  --force           Overwrite user-modified files
+  --check           Dry-run: check for drift without writing changes
+  --create-issue    Create a GitHub issue for unfilled placeholders (default: true)
+  --no-create-issue Skip GitHub issue creation for unfilled placeholders
+
+FLAGS (validate)
+  --ci              Machine-readable PASS/FAIL output for CI pipelines
 ```
 
 ## Quick Start
@@ -70,11 +83,39 @@ Update framework files after a new Teamwork release:
 gh teamwork update
 ```
 
+Check for configuration drift without making changes (useful in CI):
+
+```bash
+gh teamwork update --check
+```
+
 Force-overwrite files you've modified:
 
 ```bash
 gh teamwork update --force
 ```
+
+Update without creating a GitHub issue for unfilled placeholders:
+
+```bash
+gh teamwork update --no-create-issue
+```
+
+Check project health and environment setup:
+
+```bash
+gh teamwork doctor
+```
+
+Validate project structure (machine-readable output for CI):
+
+```bash
+gh teamwork validate --ci
+```
+
+## Version Alignment
+
+This extension is versioned in lockstep with the [Teamwork CLI](https://github.com/JoshLuedeman/teamwork). Both repositories share the same version tag (e.g., `v1.7.0`) to ensure compatibility. See `docs/releasing.md` in the Teamwork repo for the dual-repo release process.
 
 ## License
 

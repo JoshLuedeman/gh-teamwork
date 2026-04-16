@@ -16,19 +16,36 @@ USAGE
 SUBCOMMANDS
   init        Initialize Teamwork: fetch framework files and create config
   update      Update Teamwork framework files
+  doctor      Check project setup and environment health
+  validate    Validate config, state, handoffs, and memory
 
-FLAGS
+FLAGS (init)
   --source          Source repo (default: joshluedeman/teamwork)
   --ref             Git ref to install from (default: main)
   --force           Re-fetch framework files / overwrite user-modified files
   --preset          Use a preset config for a specific stack (e.g., go-api, ts-react)
   --non-interactive Skip the interactive setup wizard
 
+FLAGS (update)
+  --source          Source repo (default: joshluedeman/teamwork)
+  --ref             Git ref to update from (default: main)
+  --force           Overwrite user-modified files
+  --check           Dry-run: check for drift without writing changes
+  --create-issue    Create a GitHub issue for unfilled placeholders (default: true)
+  --no-create-issue Skip GitHub issue creation for unfilled placeholders
+
+FLAGS (validate)
+  --ci              Machine-readable PASS/FAIL output for CI pipelines
+
 EXAMPLES
   gh teamwork init
   gh teamwork init --source myorg/teamwork-fork --ref v1.2.0
   gh teamwork init --preset go-api
   gh teamwork update
+  gh teamwork update --check
+  gh teamwork update --force --no-create-issue
+  gh teamwork doctor
+  gh teamwork validate --ci
 EOF
 }
 
@@ -110,15 +127,40 @@ run_teamwork() {
   exit 1
 }
 
-parse_flags() {
+parse_init_flags() {
   FLAGS=()
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --source)          FLAGS+=(--source "$2"); shift 2 ;;
-      --ref)             FLAGS+=(--ref "$2"); shift 2 ;;
+      --source)          [[ $# -ge 2 ]] || { echo "Missing value for --source"; exit 1; }; FLAGS+=(--source "$2"); shift 2 ;;
+      --ref)             [[ $# -ge 2 ]] || { echo "Missing value for --ref"; exit 1; }; FLAGS+=(--ref "$2"); shift 2 ;;
       --force)           FLAGS+=(--force); shift ;;
-      --preset)          FLAGS+=(--preset "$2"); shift 2 ;;
+      --preset)          [[ $# -ge 2 ]] || { echo "Missing value for --preset"; exit 1; }; FLAGS+=(--preset "$2"); shift 2 ;;
       --non-interactive) FLAGS+=(--non-interactive); shift ;;
+      *) echo "Unknown flag: $1"; usage; exit 1 ;;
+    esac
+  done
+}
+
+parse_update_flags() {
+  FLAGS=()
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --source)          [[ $# -ge 2 ]] || { echo "Missing value for --source"; exit 1; }; FLAGS+=(--source "$2"); shift 2 ;;
+      --ref)             [[ $# -ge 2 ]] || { echo "Missing value for --ref"; exit 1; }; FLAGS+=(--ref "$2"); shift 2 ;;
+      --force)           FLAGS+=(--force); shift ;;
+      --check)           FLAGS+=(--check); shift ;;
+      --create-issue)    FLAGS+=(--create-issue); shift ;;
+      --no-create-issue) FLAGS+=(--create-issue=false); shift ;;
+      *) echo "Unknown flag: $1"; usage; exit 1 ;;
+    esac
+  done
+}
+
+parse_validate_flags() {
+  FLAGS=()
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --ci) FLAGS+=(--ci); shift ;;
       *) echo "Unknown flag: $1"; usage; exit 1 ;;
     esac
   done
@@ -129,7 +171,7 @@ shift || true
 
 case "$SUBCOMMAND" in
   init)
-    parse_flags "$@"
+    parse_init_flags "$@"
     echo "Bootstrapping Teamwork framework..."
     run_teamwork init "${FLAGS[@]}"
     echo ""
@@ -139,9 +181,17 @@ case "$SUBCOMMAND" in
     echo "  3. Run /setup-teamwork in Copilot to configure agents for your project"
     ;;
   update)
-    parse_flags "$@"
+    parse_update_flags "$@"
     echo "Updating Teamwork framework..."
     run_teamwork update "${FLAGS[@]}"
+    ;;
+  doctor)
+    echo "Checking Teamwork project health..."
+    run_teamwork doctor "$@"
+    ;;
+  validate)
+    parse_validate_flags "$@"
+    run_teamwork validate "${FLAGS[@]}"
     ;;
   help|--help|-h|"")
     usage
