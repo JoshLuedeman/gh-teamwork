@@ -1,0 +1,22 @@
+{
+  "name": "gh-teamwork (Bash gh CLI extension)",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20"
+    },
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/common-utils:2": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "timonwong.shellcheck",
+        "GitHub.copilot",
+        "GitHub.copilot-chat"
+      ]
+    }
+  },
+  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y shellcheck || true; chmod +x ./gh-teamwork ./.devcontainer/setup-hve-core.sh || true; bash .devcontainer/setup-hve-core.sh",
+  "remoteUser": "vscode"
+}
