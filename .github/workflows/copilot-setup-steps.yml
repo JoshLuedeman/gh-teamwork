@@ -1,0 +1,63 @@
+name: Copilot Setup Steps
+
+# Pre-provisions the GitHub Copilot cloud-sandbox environment for this repository.
+# The job MUST be named exactly `copilot-setup-steps` for Copilot to pick it up.
+# It installs the toolchain this repo needs (Bash gh CLI extension) and best-effort
+# installs the hve-core-all Copilot CLI plugin.
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+  pull_request:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+
+permissions:
+  contents: read
+
+jobs:
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 20
+
+      - name: Install project dependencies
+        continue-on-error: true
+        shell: bash
+        run: |
+          # This repo is a Bash `gh` CLI extension: shellcheck and bash are the
+          # relevant tooling and are preinstalled on ubuntu-latest. Install
+          # shellcheck for linting and mark the gh-teamwork script executable.
+          sudo apt-get update && sudo apt-get install -y shellcheck || echo "shellcheck install skipped"
+          chmod +x ./gh-teamwork || true
+          shellcheck --version || true
+
+      - name: Install hve-core-all plugin
+        continue-on-error: true
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: bash .devcontainer/setup-hve-core.sh
+
+      - name: Verify tools
+        shell: bash
+        run: |
+          echo "node:       $(node --version 2>/dev/null || echo 'not installed')"
+          echo "npm:        $(npm --version 2>/dev/null || echo 'not installed')"
+          echo "bash:       $(bash --version 2>/dev/null | head -1 || echo 'not installed')"
+          echo "shellcheck: $(shellcheck --version 2>/dev/null | grep -m1 version: || echo 'not installed')"
+          echo "gh:         $(gh --version 2>/dev/null | head -1 || echo 'not installed')"
+          echo "copilot:    $(copilot --version 2>/dev/null || echo 'not installed')"
+          copilot plugin list || echo "copilot plugin list unavailable"
